@@ -207,7 +207,7 @@
 <div class="container">
 
   <div class="header">
-    <h1></h1>Simulateur — Tarif ménage de sortie</h1>
+    <h1>Simulateur — Tarif ménage de sortie</h1>
     <p>Estimation du tarif avant ajout d'une propriété dans le PMS</p>
   </div>
 
@@ -309,8 +309,8 @@
         <div class="res-lbl">Prix de vente estimé</div>
         <div class="rbadge" id="rbadge">France — Appartement</div>
         <div class="price-ht"><span class="cur">€</span><span id="pvente">—</span></div>
-        <div class="price-ttc">TTC — soit <strong id="pht">—</strong> € HT</div>
-        <div class="price-m2">soit <strong id="pm2">—</strong> € HT / m²</div>
+        <div class="price-ttc">Prix de vente TTC</div>
+        <div class="price-m2">Ménage : <strong id="pht">—</strong> € HT / <strong id="pttc-top">—</strong> € TTC &nbsp;·&nbsp; <strong id="pm2">—</strong> € HT/m²</div>
         <div class="bk">
           <div class="brow"><span id="b0l">Base ménage HT</span><span id="b0">—</span></div>
           <div class="brow"><span id="b1l">Ajust. surface</span><span id="b1">—</span></div>
@@ -540,6 +540,7 @@
       (R === 'paca' ? 'PACA' : 'France') + ' — ' + TLABELS_TYPE[T];
 
     document.getElementById('pvente').textContent  = vente.toFixed(0);
+    document.getElementById('pttc-top').textContent = ttcArr.toFixed(0);
     document.getElementById('pvente2').textContent = vente.toFixed(0) + ' €';
     document.getElementById('pht').textContent     = f2(ht);
     document.getElementById('pttc').textContent    = ttcArr.toFixed(0) + ' €';
