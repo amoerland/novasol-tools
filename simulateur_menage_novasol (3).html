@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulateur Tarif Ménage de Sortie — Novasol France</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #0F6E56; --teal-light: #E1F5EE; --teal-mid: #1D9E75;
+    --gray-50:  #fafaf8;
+    --gray-100: #f5f5f3;
+    --gray-200: #e8e7e2;
+    --gray-400: #b4b2a9;
+    --gray-500: #888780;
+    --gray-700: #5f5e5a;
+    --gray-900: #2c2c2a;
+    --border: rgba(0,0,0,0.12);
+    --radius: 10px; --radius-sm: 6px; --radius-xs: 4px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+  .container { max-width: 740px; margin: 0 auto; }
+
+  /* Header */
+  .header { margin-bottom: 2rem; }
+  .header h1 { font-size: 22px; font-weight: 600; color: var(--gray-900); }
+  .header p  { font-size: 14px; color: var(--gray-700); margin-top: 4px; }
+
+  /* Section label */
+  .slabel {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--gray-500); margin-bottom: 8px;
+  }
+
+  /* Segment control */
+  .seg {
+    display: flex; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); overflow: hidden;
+    width: 100%; margin-bottom: 1.25rem;
+  }
+  .seg button {
+    flex: 1; padding: 9px 8px; font-size: 13px; font-weight: 500;
+    border: none; background: none; cursor: pointer;
+    color: var(--gray-700); transition: 0.15s;
+  }
+  .seg button.on { background: var(--gray-900); color: #fff; }
+
+  /* Type cards — 3 colonnes */
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1.25rem; }
+  .tcard {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 12px; cursor: pointer; background: #fff; transition: 0.15s;
+  }
+  .tcard:hover { border-color: var(--gray-400); }
+  .tcard.on   { border: 2px solid var(--gray-900); }
+  .tcard .tn  { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .tcard .td  { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+  /* Layout 2 colonnes */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  @media (max-width: 560px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Fields */
+  .field { margin-bottom: 1rem; }
+  .field label {
+    display: block; font-size: 13px; color: var(--gray-700); margin-bottom: 6px;
+  }
+  .field input[type=number] {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 14px; color: var(--gray-900);
+    background: #fff; outline: none; transition: border-color 0.15s;
+  }
+  .field input[type=number]:focus { border-color: var(--teal-mid); }
+
+  /* Stepper */
+  .stepper { display: flex; align-items: center; gap: 10px; }
+  .stepper button {
+    width: 30px; height: 30px; border: 1px solid var(--border);
+    background: #fff; border-radius: var(--radius-sm);
+    font-size: 18px; cursor: pointer; color: var(--gray-900);
+    display: flex; align-items: center; justify-content: center; transition: 0.1s;
+  }
+  .stepper button:hover    { background: var(--gray-100); }
+  .stepper button:disabled { opacity: 0.3; cursor: default; }
+  .stepper .val {
+    font-size: 15px; font-weight: 600;
+    min-width: 30px; text-align: center; color: var(--gray-900);
+  }
+  .hint { font-size: 12px; color: var(--gray-500); margin-top: 5px; }
+  .hint strong { color: var(--gray-900); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0.75rem 0; }
+
+  /* Terrasse options */
+  .ter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ter-opt {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 10px; cursor: pointer; background: #fff;
+    transition: 0.15s; text-align: left;
+  }
+  .ter-opt:hover { border-color: var(--gray-400); }
+  .ter-opt.on    { border: 2px solid var(--gray-900); }
+  .ter-opt .ton   { font-size: 12px; font-weight: 600; color: var(--gray-900); }
+  .ter-opt .tdesc { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+  .ter-opt .tprice{ font-size: 11px; color: var(--teal); font-weight: 600; margin-top: 4px; }
+
+  /* Result card */
+  .res {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+  }
+  .res-lbl {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--gray-500); margin-bottom: 6px;
+  }
+  .rbadge {
+    display: inline-block; font-size: 12px; padding: 3px 10px;
+    border-radius: var(--radius-xs); background: var(--teal-light);
+    color: var(--teal); font-weight: 600; margin-bottom: 0.75rem;
+  }
+  .price-ht   { font-size: 38px; font-weight: 700; color: var(--gray-900); line-height: 1; margin-bottom: 4px; }
+  .price-ht .cur { font-size: 20px; font-weight: 400; color: var(--gray-500); margin-right: 3px; }
+  .price-ttc  { font-size: 13px; color: var(--gray-500); margin-bottom: 6px; }
+  .price-ttc strong { color: var(--gray-900); }
+  .price-m2 {
+    font-size: 13px; color: var(--gray-500);
+    padding: 7px 0; margin-bottom: 0.9rem;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+  .price-m2 strong { color: var(--gray-900); }
+
+  /* Breakdown */
+  .bk { display: grid; gap: 4px; }
+  .brow {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--gray-500); padding: 3px 0;
+  }
+  .brow span:last-child { color: var(--gray-900); font-weight: 600; }
+  .brow.dim { opacity: 0.35; }
+  .snote {
+    font-size: 12px; color: var(--gray-500);
+    margin-top: 0.75rem; padding-top: 0.75rem;
+    border-top: 1px solid var(--border); line-height: 1.55;
+  }
+
+  /* Config toggle */
+  .cfg-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; color: var(--gray-500);
+    display: flex; align-items: center; gap: 6px;
+    padding: 0; margin-top: 1.25rem;
+  }
+  .cfg-btn:hover { color: var(--gray-900); }
+
+  /* Config panel */
+  .cfg {
+    margin-top: 0.75rem; background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem; display: none;
+  }
+  .cfg.open { display: block; }
+  .cg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .cg3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
+  .cf  { display: flex; flex-direction: column; gap: 4px; }
+  .cf label { font-size: 11px; color: var(--gray-500); }
+  .cf input {
+    padding: 6px 8px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px;
+    color: var(--gray-900); background: #fff; outline: none;
+  }
+  .cf input:focus { border-color: var(--teal-mid); }
+  .cs {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--gray-500);
+    margin: 1.1rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .cs:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+  .rr {
+    display: grid; grid-template-columns: 1fr 70px;
+    gap: 6px; align-items: center;
+    font-size: 12px; color: var(--gray-500); margin-bottom: 4px;
+  }
+  .rr input { padding: 5px 8px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px;
+    color: var(--gray-900); background: #fff; }
+
+  /* Footer */
+  footer {
+    text-align: center; font-size: 12px; color: var(--gray-400);
+    margin-top: 3rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Simulateur — Tarif ménage de sortie</h1>
+    <p>Estimation du tarif avant ajout d'une propriété dans le PMS</p>
+  </div>
+
+  <div class="slabel">Région</div>
+  <div class="seg">
+    <button class="on" onclick="setR('france',this)">France hors PACA</button>
+    <button onclick="setR('paca',this)">PACA</button>
+  </div>
+
+  <div class="slabel">Type de bien</div>
+  <div class="type-grid">
+    <div class="tcard on" onclick="setT('appt',this)">
+      <div class="tn">Appartement</div>
+      <div class="td">Base standard</div>
+    </div>
+    <div class="tcard" onclick="setT('maison',this)">
+      <div class="tn">Maison / Chalet</div>
+      <div class="td">Base intermédiaire</div>
+    </div>
+    <div class="tcard" onclick="setT('villa',this)">
+      <div class="tn">Villa</div>
+      <div class="td">Base premium</div>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- GAUCHE : formulaire -->
+    <div>
+      <div class="field">
+        <label>Nombre de chambres</label>
+        <div class="stepper">
+          <button id="bm" onclick="sc(-1)" disabled>−</button>
+          <span class="val" id="cv">0</span>
+          <button id="bp" onclick="sc(1)">+</button>
+        </div>
+        <div class="hint" id="ph">Studio → <strong>1 pièce</strong></div>
+      </div>
+
+      <div class="field">
+        <label>Surface (m²)</label>
+        <input type="number" id="surf" value="35" min="10" max="800" oninput="calc()" />
+      </div>
+
+      <hr class="divider" />
+
+      <div class="field">
+        <label>Salles d'eau (baignoire ou douche)</label>
+        <div class="stepper">
+          <button id="sm" onclick="ss(-1)" disabled>−</button>
+          <span class="val" id="sv">1</span>
+          <button onclick="ss(1)">+</button>
+        </div>
+        <div class="hint">1ère incluse dans la base</div>
+      </div>
+
+      <div class="field">
+        <label>WC séparés</label>
+        <div class="stepper">
+          <button id="wm" onclick="sw(-1)" disabled>−</button>
+          <span class="val" id="wv">0</span>
+          <button onclick="sw(1)">+</button>
+        </div>
+        <div class="hint" id="wc-hint">12 € / WC séparé</div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="field">
+        <label>Terrasse / balcon</label>
+        <div class="ter-grid">
+          <div class="ter-opt on" onclick="setTer(0,this)">
+            <div class="ton">Aucun</div>
+            <div class="tdesc">Pas de terrasse ni balcon</div>
+            <div class="tprice">+ 0 €</div>
+          </div>
+          <div class="ter-opt" onclick="setTer(1,this)">
+            <div class="ton">Petit balcon</div>
+            <div class="tdesc">Balcon d'appt, loggia</div>
+            <div class="tprice" id="tp1">+ 8 €</div>
+          </div>
+          <div class="ter-opt" onclick="setTer(2,this)">
+            <div class="ton">Terrasse standard</div>
+            <div class="tdesc">Terrasse maison / chalet</div>
+            <div class="tprice" id="tp2">+ 15 €</div>
+          </div>
+          <div class="ter-opt" onclick="setTer(3,this)">
+            <div class="ton">Grande terrasse</div>
+            <div class="tdesc">Grande terrasse villa</div>
+            <div class="tprice" id="tp3">+ 25 €</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DROITE : résultat -->
+    <div>
+      <div class="res">
+        <div class="res-lbl">Tarif estimé</div>
+        <div class="rbadge" id="rbadge">France — Appartement</div>
+        <div class="price-ht"><span class="cur">€</span><span id="pht">—</span></div>
+        <div class="price-ttc">soit <strong id="pttc">—</strong> € TTC (TVA 20%)</div>
+        <div class="price-m2">soit <strong id="pm2">—</strong> € HT / m²</div>
+        <div class="bk">
+          <div class="brow"><span id="b0l">Base</span><span id="b0">—</span></div>
+          <div class="brow"><span id="b1l">Surface</span><span id="b1">—</span></div>
+          <div class="brow dim" id="r2"><span>SdE suppl.</span><span id="b2">—</span></div>
+          <div class="brow dim" id="r3"><span>WC séparés</span><span id="b3">—</span></div>
+          <div class="brow dim" id="r4"><span id="b4l">Terrasse / balcon</span><span id="b4">—</span></div>
+        </div>
+        <div class="snote" id="snote"></div>
+      </div>
+    </div>
+
+  </div><!-- /layout -->
+
+  <!-- Config -->
+  <button class="cfg-btn" onclick="toggleCfg()">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="8" cy="8" r="2.5"/>
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+    </svg>
+    <span id="clbl">Ajuster la grille tarifaire</span>
+  </button>
+
+  <div class="cfg" id="cfgp">
+
+    <div class="cs">Appartement — France hors PACA (€ HT)</div>
+    <div class="cg3">
+      <div class="cf"><label>Studio</label><input type="number" id="fa0" value="45" oninput="calc()"></div>
+      <div class="cf"><label>2 pièces</label><input type="number" id="fa1" value="69" oninput="calc()"></div>
+      <div class="cf"><label>3 pièces</label><input type="number" id="fa2" value="81" oninput="calc()"></div>
+      <div class="cf"><label>4 pièces</label><input type="number" id="fa3" value="103" oninput="calc()"></div>
+      <div class="cf"><label>5 pièces +</label><input type="number" id="fa4" value="138" oninput="calc()"></div>
+    </div>
+
+    <div class="cs">Appartement — PACA (€ HT)</div>
+    <div class="cg3">
+      <div class="cf"><label>Studio</label><input type="number" id="pa0" value="65" oninput="calc()"></div>
+      <div class="cf"><label>2 pièces</label><input type="number" id="pa1" value="75" oninput="calc()"></div>
+      <div class="cf"><label>3 pièces</label><input type="number" id="pa2" value="85" oninput="calc()"></div>
+      <div class="cf"><label>4 pièces</label><input type="number" id="pa3" value="115" oninput="calc()"></div>
+      <div class="cf"><label>5 pièces +</label><input type="number" id="pa4" value="140" oninput="calc()"></div>
+    </div>
+
+    <div class="cs">Maison / Chalet — majoration sur base appartement (%)</div>
+    <div class="cg2">
+      <div class="cf"><label>France hors PACA</label><input type="number" id="mm_f" value="15" oninput="calc()"></div>
+      <div class="cf"><label>PACA</label><input type="number" id="mm_p" value="20" oninput="calc()"></div>
+    </div>
+
+    <div class="cs">Villa — majoration sur base appartement (%)</div>
+    <div class="cg2">
+      <div class="cf"><label>France hors PACA</label><input type="number" id="vm_f" value="30" oninput="calc()"></div>
+      <div class="cf"><label>PACA</label><input type="number" id="vm_p" value="35" oninput="calc()"></div>
+    </div>
+
+    <div class="cs">Ajustement surface (€ / m² au-delà de la référence)</div>
+    <div class="cg3">
+      <div class="cf"><label>Appartement</label><input type="number" id="ra_a" value="0.25" step="0.05" oninput="calc()"></div>
+      <div class="cf"><label>Maison / Chalet</label><input type="number" id="ra_m" value="0.35" step="0.05" oninput="calc()"></div>
+      <div class="cf"><label>Villa</label><input type="number" id="ra_v" value="0.50" step="0.05" oninput="calc()"></div>
+    </div>
+
+    <div class="cs">Surface de référence par niveau (m²)</div>
+    <div style="display:grid;gap:5px;max-width:300px">
+      <div class="rr"><span>Studio</span><input type="number" id="sr0" value="35" oninput="calc()"></div>
+      <div class="rr"><span>2 pièces</span><input type="number" id="sr1" value="55" oninput="calc()"></div>
+      <div class="rr"><span>3 pièces</span><input type="number" id="sr2" value="75" oninput="calc()"></div>
+      <div class="rr"><span>4 pièces</span><input type="number" id="sr3" value="95" oninput="calc()"></div>
+      <div class="rr"><span>5 pièces +</span><input type="number" id="sr4" value="120" oninput="calc()"></div>
+    </div>
+
+    <div class="cs">Suppléments fixes (€ HT / unité)</div>
+    <div class="cg2">
+      <div class="cf"><label>Par SdE suppl.</label><input type="number" id="rsde" value="12" oninput="calc()"></div>
+      <div class="cf"><label>Par WC séparé</label><input type="number" id="rwc" value="12" oninput="syncWCHint();calc()"></div>
+    </div>
+
+    <div class="cs">Terrasse / balcon (€ HT)</div>
+    <div class="cg3">
+      <div class="cf"><label>Petit balcon</label><input type="number" id="rt1" value="8" oninput="syncTerPrices();calc()"></div>
+      <div class="cf"><label>Terrasse standard</label><input type="number" id="rt2" value="15" oninput="syncTerPrices();calc()"></div>
+      <div class="cf"><label>Grande terrasse</label><input type="number" id="rt3" value="25" oninput="syncTerPrices();calc()"></div>
+    </div>
+
+  </div><!-- /cfg -->
+
+  <footer>Novasol France — Usage interne &nbsp;|&nbsp; Tarifs à valider avec l'équipe terrain avant intégration dans le PMS</footer>
+
+</div><!-- /container -->
+
+<script>
+  var R = 'france', T = 'appt', ch = 0, sde = 1, wc = 0, ter = 0;
+
+  var PL = ['Studio', '2 pièces', '3 pièces', '4 pièces', '5 pièces +'];
+  var PH = [
+    'Studio → <strong>1 pièce</strong>',
+    '1 chambre → <strong>2 pièces</strong>',
+    '2 chambres → <strong>3 pièces</strong>',
+    '3 chambres → <strong>4 pièces</strong>',
+    '4 chambres → <strong>5 pièces</strong>',
+    '5 chambres → <strong>5 pièces (plafond)</strong>',
+    '6 chambres → <strong>5 pièces (plafond)</strong>',
+    '7 chambres → <strong>5 pièces (plafond)</strong>',
+    '8 chambres → <strong>5 pièces (plafond)</strong>'
+  ];
+  var TLABELS      = ['—', 'Petit balcon', 'Terrasse standard', 'Grande terrasse'];
+  var TLABELS_TYPE = { appt: 'Appartement', maison: 'Maison / Chalet', villa: 'Villa' };
+
+  function setR(r, btn) {
+    R = r;
+    document.querySelectorAll('.seg button').forEach(function(b) { b.classList.remove('on'); });
+    btn.classList.add('on');
+    calc();
+  }
+
+  function setT(t, card) {
+    T = t;
+    document.querySelectorAll('.tcard').forEach(function(c) { c.classList.remove('on'); });
+    card.classList.add('on');
+    calc();
+  }
+
+  function sc(d) {
+    ch = Math.min(8, Math.max(0, ch + d));
+    document.getElementById('cv').textContent = ch;
+    document.getElementById('bm').disabled = ch === 0;
+    document.getElementById('bp').disabled = ch === 8;
+    document.getElementById('ph').innerHTML = PH[ch];
+    calc();
+  }
+
+  function ss(d) {
+    sde = Math.min(8, Math.max(1, sde + d));
+    document.getElementById('sv').textContent = sde;
+    document.getElementById('sm').disabled = sde === 1;
+    calc();
+  }
+
+  function sw(d) {
+    wc = Math.min(8, Math.max(0, wc + d));
+    document.getElementById('wv').textContent = wc;
+    document.getElementById('wm').disabled = wc === 0;
+    calc();
+  }
+
+  function setTer(v, card) {
+    ter = v;
+    document.querySelectorAll('.ter-opt').forEach(function(c) { c.classList.remove('on'); });
+    card.classList.add('on');
+    calc();
+  }
+
+  function syncTerPrices() {
+    document.getElementById('tp1').textContent = '+ ' + gn('rt1') + ' €';
+    document.getElementById('tp2').textContent = '+ ' + gn('rt2') + ' €';
+    document.getElementById('tp3').textContent = '+ ' + gn('rt3') + ' €';
+  }
+
+  function syncWCHint() {
+    document.getElementById('wc-hint').textContent = gn('rwc').toFixed(0) + ' € / WC séparé';
+  }
+
+  function gn(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function f2(n) { return n.toFixed(2).replace('.', ','); }
+
+  function calc() {
+    var surf = parseInt(document.getElementById('surf').value) || 0;
+    var idx  = Math.min(ch, 4);
+
+    // Base appartement
+    var base_appt = R === 'france'
+      ? [gn('fa0'), gn('fa1'), gn('fa2'), gn('fa3'), gn('fa4')][idx]
+      : [gn('pa0'), gn('pa1'), gn('pa2'), gn('pa3'), gn('pa4')][idx];
+
+    // Majoration type
+    var pct = 0;
+    if (T === 'maison') pct = R === 'france' ? gn('mm_f') : gn('mm_p');
+    if (T === 'villa')  pct = R === 'france' ? gn('vm_f') : gn('vm_p');
+    var base = Math.round(base_appt * (1 + pct / 100) * 100) / 100;
+
+    // Ajustement surface
+    var sr  = [gn('sr0'), gn('sr1'), gn('sr2'), gn('sr3'), gn('sr4')][idx];
+    var ra  = T === 'villa' ? gn('ra_v') : T === 'maison' ? gn('ra_m') : gn('ra_a');
+    var surfAdj = Math.round((surf - sr) * ra * 100) / 100;
+
+    // Suppléments
+    var sdeAdj = Math.max(0, sde - 1) * gn('rsde');
+    var wcAdj  = wc * gn('rwc');
+    var terAdj = [0, gn('rt1'), gn('rt2'), gn('rt3')][ter];
+
+    // Total
+    var ht  = Math.round((base + surfAdj + sdeAdj + wcAdj + terAdj) * 100) / 100;
+    var ttc = Math.round(ht * 1.2 * 100) / 100;
+    var m2  = surf > 0 ? Math.round(ht / surf * 100) / 100 : 0;
+
+    // Affichage
+    document.getElementById('rbadge').textContent =
+      (R === 'paca' ? 'PACA' : 'France') + ' — ' + TLABELS_TYPE[T];
+
+    document.getElementById('pht').textContent  = f2(ht);
+    document.getElementById('pttc').textContent = f2(ttc);
+    document.getElementById('pm2').textContent  = f2(m2);
+
+    var pctLbl = pct > 0 ? ' (+' + pct + '%)' : '';
+    document.getElementById('b0l').textContent = 'Base ' + PL[idx] + ' — ' + TLABELS_TYPE[T] + pctLbl;
+    document.getElementById('b0').textContent  = '€\u00a0' + f2(base);
+
+    document.getElementById('b1l').textContent = 'Surface ' + surf + '\u00a0m² (réf.\u00a0' + sr + '\u00a0m²)';
+    document.getElementById('b1').textContent  =
+      surfAdj === 0 ? '€\u00a00,00' : (surfAdj > 0 ? '+ ' : '− ') + '€\u00a0' + f2(Math.abs(surfAdj));
+
+    document.getElementById('r2').classList.toggle('dim', sdeAdj === 0);
+    document.getElementById('b2').textContent = sdeAdj > 0 ? '+\u00a0€\u00a0' + f2(sdeAdj) : '—';
+
+    document.getElementById('r3').classList.toggle('dim', wc === 0);
+    document.getElementById('b3').textContent = wc > 0 ? '+\u00a0€\u00a0' + f2(wcAdj) : '—';
+
+    document.getElementById('r4').classList.toggle('dim', ter === 0);
+    document.getElementById('b4l').textContent = ter > 0 ? TLABELS[ter] : 'Terrasse / balcon';
+    document.getElementById('b4').textContent  = ter > 0 ? '+\u00a0€\u00a0' + f2(terAdj) : '—';
+
+    var diff = surf - sr;
+    document.getElementById('snote').textContent =
+      diff > 0 ? 'Surface +' + diff + ' m² au-dessus de la référence (+€\u00a0' + f2(Math.abs(surfAdj)) + ')' :
+      diff < 0 ? 'Surface ' + Math.abs(diff) + ' m² en dessous de la référence (−\u00a0€\u00a0' + f2(Math.abs(surfAdj)) + ')' :
+      'Surface égale à la référence — tarif de base appliqué directement.';
+  }
+
+  function toggleCfg() {
+    var p = document.getElementById('cfgp');
+    var o = p.classList.toggle('open');
+    document.getElementById('clbl').textContent = o ? 'Masquer la grille tarifaire' : 'Ajuster la grille tarifaire';
+  }
+
+  // Init
+  calc();
+</script>
+</body>
+</html>
