@@ -306,17 +306,24 @@
     <!-- DROITE : résultat -->
     <div>
       <div class="res">
-        <div class="res-lbl">Tarif estimé</div>
+        <div class="res-lbl">Prix de vente estimé</div>
         <div class="rbadge" id="rbadge">France — Appartement</div>
-        <div class="price-ht"><span class="cur">€</span><span id="pht">—</span></div>
-        <div class="price-ttc">soit <strong id="pttc">—</strong> € TTC (TVA 20%)</div>
+        <div class="price-ht"><span class="cur">€</span><span id="pvente">—</span></div>
+        <div class="price-ttc">TTC — soit <strong id="pht">—</strong> € HT</div>
         <div class="price-m2">soit <strong id="pm2">—</strong> € HT / m²</div>
         <div class="bk">
-          <div class="brow"><span id="b0l">Base</span><span id="b0">—</span></div>
-          <div class="brow"><span id="b1l">Surface</span><span id="b1">—</span></div>
+          <div class="brow"><span id="b0l">Base ménage HT</span><span id="b0">—</span></div>
+          <div class="brow"><span id="b1l">Ajust. surface</span><span id="b1">—</span></div>
           <div class="brow dim" id="r2"><span>SdE suppl.</span><span id="b2">—</span></div>
           <div class="brow dim" id="r3"><span>WC séparés</span><span id="b3">—</span></div>
           <div class="brow dim" id="r4"><span id="b4l">Terrasse / balcon</span><span id="b4">—</span></div>
+          <div class="brow" style="border-top:1px solid rgba(0,0,0,0.10);margin-top:4px;padding-top:6px">
+            <span>Ménage TTC arrondi</span><span id="pttc">—</span>
+          </div>
+          <div class="brow"><span id="mc-lbl">+ 1/2 Mini-clean HT</span><span id="pmc">—</span></div>
+          <div class="brow" style="font-weight:700;color:#2c2c2a">
+            <span>= Prix de vente TTC</span><span id="pvente2">—</span>
+          </div>
         </div>
         <div class="snote" id="snote"></div>
       </div>
@@ -337,10 +344,10 @@
 
     <div class="cs">Appartement — France hors PACA (€ HT)</div>
     <div class="cg3">
-      <div class="cf"><label>Studio</label><input type="number" id="fa0" value="45" oninput="calc()"></div>
+      <div class="cf"><label>Studio</label><input type="number" id="fa0" value="46" oninput="calc()"></div>
       <div class="cf"><label>2 pièces</label><input type="number" id="fa1" value="69" oninput="calc()"></div>
-      <div class="cf"><label>3 pièces</label><input type="number" id="fa2" value="81" oninput="calc()"></div>
-      <div class="cf"><label>4 pièces</label><input type="number" id="fa3" value="103" oninput="calc()"></div>
+      <div class="cf"><label>3 pièces</label><input type="number" id="fa2" value="80.5" oninput="calc()"></div>
+      <div class="cf"><label>4 pièces</label><input type="number" id="fa3" value="103.5" oninput="calc()"></div>
       <div class="cf"><label>5 pièces +</label><input type="number" id="fa4" value="138" oninput="calc()"></div>
     </div>
 
@@ -392,6 +399,13 @@
       <div class="cf"><label>Petit balcon</label><input type="number" id="rt1" value="8" oninput="syncTerPrices();calc()"></div>
       <div class="cf"><label>Terrasse standard</label><input type="number" id="rt2" value="15" oninput="syncTerPrices();calc()"></div>
       <div class="cf"><label>Grande terrasse</label><input type="number" id="rt3" value="25" oninput="syncTerPrices();calc()"></div>
+    </div>
+
+    <div class="cs">Mini-clean HT (par niveau)</div>
+    <div style="display:grid;gap:5px;max-width:380px">
+      <div class="rr"><span>Studio / 2p / 3p — Appartement</span><input type="number" id="mc-appt-low" value="30" oninput="calc()"></div>
+      <div class="rr"><span>4p / 5p+ — Appartement</span><input type="number" id="mc-appt-high" value="40" oninput="calc()"></div>
+      <div class="rr"><span>Maison / Chalet / Villa</span><input type="number" id="mc-other" value="50" oninput="calc()"></div>
     </div>
 
   </div><!-- /cfg -->
@@ -480,7 +494,7 @@
     var surf = parseInt(document.getElementById('surf').value) || 0;
     var idx  = Math.min(ch, 4);
 
-    // Base appartement
+    // Base HT (valeurs réelles de la grille)
     var base_appt = R === 'france'
       ? [gn('fa0'), gn('fa1'), gn('fa2'), gn('fa3'), gn('fa4')][idx]
       : [gn('pa0'), gn('pa1'), gn('pa2'), gn('pa3'), gn('pa4')][idx];
@@ -496,47 +510,66 @@
     var ra  = T === 'villa' ? gn('ra_v') : T === 'maison' ? gn('ra_m') : gn('ra_a');
     var surfAdj = Math.round((surf - sr) * ra * 100) / 100;
 
-    // Suppléments
+    // Supplements
     var sdeAdj = Math.max(0, sde - 1) * gn('rsde');
     var wcAdj  = wc * gn('rwc');
     var terAdj = [0, gn('rt1'), gn('rt2'), gn('rt3')][ter];
 
-    // Total
-    var ht  = Math.round((base + surfAdj + sdeAdj + wcAdj + terAdj) * 100) / 100;
-    var ttc = Math.round(ht * 1.2 * 100) / 100;
-    var m2  = surf > 0 ? Math.round(ht / surf * 100) / 100 : 0;
+    // HT total menage
+    var ht = Math.round((base + surfAdj + sdeAdj + wcAdj + terAdj) * 100) / 100;
+
+    // TTC arrondi a l entier
+    var ttcArr = Math.round(ht * 1.2);
+
+    // Mini-clean HT selon type et niveau
+    var mcHT = 0;
+    if (T === 'appt') {
+      mcHT = idx <= 2 ? gn('mc-appt-low') : gn('mc-appt-high');
+    } else {
+      mcHT = gn('mc-other');
+    }
+
+    // Prix de vente = ceil((TTC arrondi + mini-clean HT / 2) / 10) * 10
+    var venteRaw = ttcArr + mcHT / 2;
+    var vente = Math.ceil(venteRaw / 10) * 10;
+
+    var m2 = surf > 0 ? Math.round(ht / surf * 100) / 100 : 0;
 
     // Affichage
     document.getElementById('rbadge').textContent =
       (R === 'paca' ? 'PACA' : 'France') + ' — ' + TLABELS_TYPE[T];
 
-    document.getElementById('pht').textContent  = f2(ht);
-    document.getElementById('pttc').textContent = f2(ttc);
-    document.getElementById('pm2').textContent  = f2(m2);
+    document.getElementById('pvente').textContent  = vente.toFixed(0);
+    document.getElementById('pvente2').textContent = vente.toFixed(0) + ' €';
+    document.getElementById('pht').textContent     = f2(ht);
+    document.getElementById('pttc').textContent    = ttcArr.toFixed(0) + ' €';
+    document.getElementById('pmc').textContent     = '+ ' + f2(mcHT / 2) + ' €';
+    document.getElementById('pm2').textContent     = f2(m2);
+    document.getElementById('mc-lbl').textContent  = '+ 1/2 Mini-clean (' + mcHT.toFixed(0) + ' € HT)';
 
     var pctLbl = pct > 0 ? ' (+' + pct + '%)' : '';
     document.getElementById('b0l').textContent = 'Base ' + PL[idx] + ' — ' + TLABELS_TYPE[T] + pctLbl;
-    document.getElementById('b0').textContent  = '€\u00a0' + f2(base);
+    document.getElementById('b0').textContent  = '€ ' + f2(base);
 
-    document.getElementById('b1l').textContent = 'Surface ' + surf + '\u00a0m² (réf.\u00a0' + sr + '\u00a0m²)';
+    document.getElementById('b1l').textContent = 'Surface ' + surf + ' m² (ref. ' + sr + ' m²)';
     document.getElementById('b1').textContent  =
-      surfAdj === 0 ? '€\u00a00,00' : (surfAdj > 0 ? '+ ' : '− ') + '€\u00a0' + f2(Math.abs(surfAdj));
+      surfAdj === 0 ? '€ 0,00' : (surfAdj > 0 ? '+ ' : '− ') + '€ ' + f2(Math.abs(surfAdj));
 
     document.getElementById('r2').classList.toggle('dim', sdeAdj === 0);
-    document.getElementById('b2').textContent = sdeAdj > 0 ? '+\u00a0€\u00a0' + f2(sdeAdj) : '—';
+    document.getElementById('b2').textContent = sdeAdj > 0 ? '+ € ' + f2(sdeAdj) : '—';
 
     document.getElementById('r3').classList.toggle('dim', wc === 0);
-    document.getElementById('b3').textContent = wc > 0 ? '+\u00a0€\u00a0' + f2(wcAdj) : '—';
+    document.getElementById('b3').textContent = wc > 0 ? '+ € ' + f2(wcAdj) : '—';
 
     document.getElementById('r4').classList.toggle('dim', ter === 0);
     document.getElementById('b4l').textContent = ter > 0 ? TLABELS[ter] : 'Terrasse / balcon';
-    document.getElementById('b4').textContent  = ter > 0 ? '+\u00a0€\u00a0' + f2(terAdj) : '—';
+    document.getElementById('b4').textContent  = ter > 0 ? '+ € ' + f2(terAdj) : '—';
 
     var diff = surf - sr;
     document.getElementById('snote').textContent =
-      diff > 0 ? 'Surface +' + diff + ' m² au-dessus de la référence (+€\u00a0' + f2(Math.abs(surfAdj)) + ')' :
-      diff < 0 ? 'Surface ' + Math.abs(diff) + ' m² en dessous de la référence (−\u00a0€\u00a0' + f2(Math.abs(surfAdj)) + ')' :
-      'Surface égale à la référence — tarif de base appliqué directement.';
+      diff > 0 ? 'Surface +' + diff + ' m² au-dessus de la reference (+€ ' + f2(Math.abs(surfAdj)) + ')' :
+      diff < 0 ? 'Surface ' + Math.abs(diff) + ' m² en dessous de la reference (− € ' + f2(Math.abs(surfAdj)) + ')' :
+      'Surface egale a la reference — tarif de base applique directement.';
   }
 
   function toggleCfg() {
